@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# local SQLite database (recreate with `npx prisma migrate dev && npm run seed`)
+*.db
+*.db-journal
+
+# cached TheMealDB index used by scripts/fetch-hero-images.py
+prisma/.mealdb-cache.json

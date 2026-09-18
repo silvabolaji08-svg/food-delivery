@@ -1,0 +1,127 @@
+// Food delivery data model.
+// Money is stored in minor units (cents) as Int to avoid float rounding errors.
+// SQLite has no native enums, so status-style fields are Strings validated in app code.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Restaurant {
+  id          String @id @default(cuid())
+  slug        String @unique
+  name        String
+  description String
+  cuisine     String
+  // Null until `scripts/fetch-food-images.py` has run; the card falls back
+  // to a heroColor panel so the grid still looks deliberate.
+  imageUrl    String?
+  heroColor   String @default("#f97316")
+
+  rating      Float @default(4.5)
+  reviewCount Int   @default(0)
+  priceRange  Int   @default(2) // 1-4, rendered as $ .. $$$$
+
+  deliveryMinMinutes Int @default(20)
+  deliveryMaxMinutes Int @default(40)
+  deliveryFee        Int @default(299)
+  minimumOrder       Int @default(1000)
+
+  address String
+  isOpen  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  menuSections MenuSection[]
+  orders       Order[]
+
+  @@index([cuisine])
+}
+
+model MenuSection {
+  id       String @id @default(cuid())
+  name     String
+  position Int    @default(0)
+
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  items MenuItem[]
+
+  @@index([restaurantId])
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  name        String
+  description String
+  price       Int
+  imageUrl    String?
+
+  isVegetarian Boolean @default(false)
+  isSpicy      Boolean @default(false)
+  isPopular    Boolean @default(false)
+  isAvailable  Boolean @default(true)
+
+  sectionId String
+  section   MenuSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  orderItems OrderItem[]
+
+  @@index([sectionId])
+}
+
+model Order {
+  id          String @id @default(cuid())
+  orderNumber String @unique
+
+  // PLACED | CONFIRMED | PREPARING | OUT_FOR_DELIVERY | DELIVERED | CANCELLED
+  status String @default("PLACED")
+
+  customerName  String
+  customerPhone String
+  customerEmail String?
+
+  addressLine   String
+  city          String
+  postcode      String
+  deliveryNotes String?
+
+  subtotal   Int
+  deliveryFee Int
+  serviceFee Int
+  total      Int
+
+  // CARD | CASH — no real payment details are ever stored.
+  paymentMethod String @default("CARD")
+
+  placedAt    DateTime @default(now())
+  estimatedAt DateTime
+
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  items OrderItem[]
+
+  @@index([restaurantId])
+}
+
+model OrderItem {
+  id       String @id @default(cuid())
+  quantity Int
+  // Price and name are snapshotted so past orders survive menu edits.
+  unitPrice    Int
+  nameSnapshot String
+
+  orderId String
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+
+  @@index([orderId])
+}

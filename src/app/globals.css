@@ -1,26 +1,162 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens. Every colour used by the app is defined here once, in both
+ * themes, so components never hardcode a hex value.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background: #fdfcfb;
+  --surface: #ffffff;
+  --surface-muted: #f6f4f1;
+  --foreground: #1c1917;
+  --muted: #78716c;
+  --border: #e7e2dc;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Primary action colour is the logo green. White on it is ~12:1, where the
+     previous orange managed only ~3.4:1 and failed WCAG AA. */
+  --brand: #014425;
+  --brand-hover: #01301a;
+  --brand-foreground: #ffffff;
+  --brand-subtle: #e9f3ed;
+
+  /* The logo's orange, used the way the logo uses it: as an accent, never as
+     a surface behind white text. `accent-strong` is the readable text weight. */
+  --accent: #f98c02;
+  --accent-strong: #a35a02;
+  --accent-subtle: #fff4e3;
+
+  --success: #15803d;
+  --success-subtle: #eaf7ee;
+  --warning: #b45309;
+  --danger: #b91c1c;
+  --danger-subtle: #fdf0ef;
+
+  --ring: #014425;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0c0a09;
+    --surface: #1c1917;
+    --surface-muted: #262220;
+    --foreground: #f5f5f4;
+    --muted: #a8a29e;
+    --border: #332e2b;
+
+    /* Matches the lighter green used by the dark logo artwork. */
+    --brand: #3dbe7d;
+    --brand-hover: #63d19a;
+    --brand-foreground: #06251a;
+    --brand-subtle: #10281d;
+
+    --accent: #fb9214;
+    --accent-strong: #fbbf24;
+    --accent-subtle: #2a1c12;
+
+    --success: #4ade80;
+    --success-subtle: #12251a;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --danger-subtle: #2a1515;
+
+    --ring: #3dbe7d;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-subtle: var(--brand-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-subtle: var(--accent-subtle);
+
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Keyboard focus stays visible everywhere; pointer clicks stay clean. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    /* Without this, a staggered entrance still trickles in over its delays
+       even though each step is instant. */
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/*
+ * Logo entrance.
+ *
+ * The mark carries speed lines, so it arrives from the left as if it were
+ * moving, and the wordmark settles in behind it. Both end in the resting state
+ * with `forwards`, which is what lets the reduced-motion rule above collapse
+ * them to an instant reveal rather than leaving the header empty.
+ */
+@keyframes brand-mark-in {
+  from {
+    opacity: 0;
+    transform: translateX(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes brand-word-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.brand-mark-art {
+  opacity: 0;
+  animation: brand-mark-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition: transform 200ms ease-out;
+}
+
+.brand-mark-word {
+  opacity: 0;
+  animation: brand-word-in 360ms ease-out 160ms forwards;
+}
+
+/* Nudging the mark forward on hover echoes the speed lines in the artwork. */
+.brand-mark:hover .brand-mark-art {
+  transform: translateX(2px);
 }
