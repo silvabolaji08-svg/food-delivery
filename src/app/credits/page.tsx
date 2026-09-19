@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { readFileSync } from "node:fs";
-import { connection } from "next/server";
-import { join } from "node:path";
 import { Camera } from "lucide-react";
+
+// Imported rather than read from disk at request time. Next traces file
+// dependencies at build time and a path built with `process.cwd()` is not
+// traced into the serverless bundle, so the deployed page found nothing.
+// The data only changes when the image fetcher runs, which needs a rebuild
+// anyway, so bundling it is both safer and cheaper.
+import creditsData from "../../../prisma/image-credits.json";
 
 export const metadata: Metadata = {
   title: "Photo credits",
@@ -22,28 +26,11 @@ type Credit = {
  * credit to the photographer, so the fetcher records both at download time
  * and this page is where they are shown.
  */
-function loadCredits(): [string, Credit][] {
-  try {
-    const raw = readFileSync(
-      join(process.cwd(), "prisma", "image-credits.json"),
-      "utf-8",
-    );
-    const parsed = JSON.parse(raw) as Record<string, Credit>;
+const credits: [string, Credit][] = Object.entries(
+  creditsData as Record<string, Credit>,
+).sort(([a], [b]) => a.localeCompare(b));
 
-    return Object.entries(parsed).sort(([a], [b]) => a.localeCompare(b));
-  } catch {
-    // No Pexels photos fetched yet.
-    return [];
-  }
-}
-
-export default async function CreditsPage() {
-  // Read at request time, not build time: the credits file is written by the
-  // image fetcher, so a prerender would bake in whatever was there before it
-  // had run.
-  await connection();
-
-  const credits = loadCredits();
+export default function CreditsPage() {
 
   const photographers = new Map<string, string>();
   for (const [, credit] of credits) {

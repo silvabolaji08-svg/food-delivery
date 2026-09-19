@@ -1,13 +1,13 @@
 -- CreateTable
 CREATE TABLE "Restaurant" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "cuisine" TEXT NOT NULL,
-    "imageUrl" TEXT NOT NULL,
+    "imageUrl" TEXT,
     "heroColor" TEXT NOT NULL DEFAULT '#f97316',
-    "rating" REAL NOT NULL DEFAULT 4.5,
+    "rating" DOUBLE PRECISION NOT NULL DEFAULT 4.5,
     "reviewCount" INTEGER NOT NULL DEFAULT 0,
     "priceRange" INTEGER NOT NULL DEFAULT 2,
     "deliveryMinMinutes" INTEGER NOT NULL DEFAULT 20,
@@ -16,21 +16,24 @@ CREATE TABLE "Restaurant" (
     "minimumOrder" INTEGER NOT NULL DEFAULT 1000,
     "address" TEXT NOT NULL,
     "isOpen" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Restaurant_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "MenuSection" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "position" INTEGER NOT NULL DEFAULT 0,
     "restaurantId" TEXT NOT NULL,
-    CONSTRAINT "MenuSection_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+
+    CONSTRAINT "MenuSection_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "MenuItem" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "price" INTEGER NOT NULL,
@@ -40,12 +43,13 @@ CREATE TABLE "MenuItem" (
     "isPopular" BOOLEAN NOT NULL DEFAULT false,
     "isAvailable" BOOLEAN NOT NULL DEFAULT true,
     "sectionId" TEXT NOT NULL,
-    CONSTRAINT "MenuItem_sectionId_fkey" FOREIGN KEY ("sectionId") REFERENCES "MenuSection" ("id") ON DELETE CASCADE ON UPDATE CASCADE
+
+    CONSTRAINT "MenuItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Order" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "orderNumber" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'PLACED',
     "customerName" TEXT NOT NULL,
@@ -60,22 +64,23 @@ CREATE TABLE "Order" (
     "serviceFee" INTEGER NOT NULL,
     "total" INTEGER NOT NULL,
     "paymentMethod" TEXT NOT NULL DEFAULT 'CARD',
-    "placedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "estimatedAt" DATETIME NOT NULL,
+    "placedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "estimatedAt" TIMESTAMP(3) NOT NULL,
     "restaurantId" TEXT NOT NULL,
-    CONSTRAINT "Order_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+
+    CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "OrderItem" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "quantity" INTEGER NOT NULL,
     "unitPrice" INTEGER NOT NULL,
     "nameSnapshot" TEXT NOT NULL,
     "orderId" TEXT NOT NULL,
     "menuItemId" TEXT NOT NULL,
-    CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT "OrderItem_menuItemId_fkey" FOREIGN KEY ("menuItemId") REFERENCES "MenuItem" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
+
+    CONSTRAINT "OrderItem_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -98,3 +103,18 @@ CREATE INDEX "Order_restaurantId_idx" ON "Order"("restaurantId");
 
 -- CreateIndex
 CREATE INDEX "OrderItem_orderId_idx" ON "OrderItem"("orderId");
+
+-- AddForeignKey
+ALTER TABLE "MenuSection" ADD CONSTRAINT "MenuSection_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MenuItem" ADD CONSTRAINT "MenuItem_sectionId_fkey" FOREIGN KEY ("sectionId") REFERENCES "MenuSection"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_restaurantId_fkey" FOREIGN KEY ("restaurantId") REFERENCES "Restaurant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OrderItem" ADD CONSTRAINT "OrderItem_menuItemId_fkey" FOREIGN KEY ("menuItemId") REFERENCES "MenuItem"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

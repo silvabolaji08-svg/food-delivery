@@ -1,6 +1,7 @@
 // Food delivery data model.
 // Money is stored in minor units (cents) as Int to avoid float rounding errors.
-// SQLite has no native enums, so status-style fields are Strings validated in app code.
+// Status-style fields are Strings validated in app code rather than native
+// enums, so the model stays portable across databases.
 
 generator client {
   provider = "prisma-client"
@@ -8,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Restaurant {

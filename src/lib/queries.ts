@@ -9,10 +9,9 @@ import { prisma } from "@/lib/prisma";
  * Prisma directly. Swapping SQLite for another store means changing only
  * this file and `prisma.ts`.
  *
- * `better-sqlite3` is a synchronous driver, so its queries would otherwise
- * resolve during prerendering and bake build-time rows into the HTML. Every
- * read below awaits `connection()` first, which holds rendering until a real
- * request arrives.
+ * Every read awaits `connection()` first so it cannot resolve during
+ * prerendering and bake build-time rows into static HTML. Restaurant
+ * availability and order status both change between deploys.
  */
 
 export type RestaurantListItem = Awaited<

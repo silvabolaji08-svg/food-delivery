@@ -2,7 +2,7 @@
 
 A food delivery app: browse restaurants, build a cart, check out, and track the
 order from the kitchen to the door. Built with Next.js 16 (App Router), React
-19, Prisma 7 on SQLite, Tailwind CSS v4 and Zustand.
+19, Prisma 7 on Postgres, Tailwind CSS v4 and Zustand.
 
 Orders and payments are simulated. No card details are collected or stored.
 
@@ -10,8 +10,9 @@ Orders and payments are simulated. No card details are collected or stored.
 
 ```bash
 npm install
-npx prisma migrate dev   # creates dev.db and applies migrations
-npm run seed             # 6 restaurants, 18 menu sections, 56 dishes
+# DATABASE_URL must point at a Postgres database; see Deployment below.
+npx prisma migrate dev   # applies migrations
+npm run seed             # 18 restaurants, 54 sections, 164 dishes
 npm run dev
 ```
 
@@ -37,6 +38,7 @@ Open <http://localhost:3000>.
 | `/restaurants/[slug]`    | Dynamic   | Menu, with a sticky section nav and cart bar |
 | `/checkout`              | Static    | Delivery form; the cart lives in the browser |
 | `/orders`                | Dynamic   | Every order placed, plus order-number lookup |
+| `/credits`               | Static    | Photographer attribution                     |
 | `/orders/[orderNumber]`  | Dynamic   | Status timeline, receipt and delivery details |
 
 ## How it fits together
@@ -45,9 +47,9 @@ Open <http://localhost:3000>.
 float. The service fee is 8% of the subtotal, capped at $5.00.
 
 **Reads go through `src/lib/queries.ts`.** Pages and actions never call Prisma
-directly, so the storage layer is swappable. Every read awaits `connection()`
-first: `better-sqlite3` is a synchronous driver, so without it queries would
-resolve during prerendering and bake build-time rows into static HTML.
+directly, so the storage layer is swappable — which is what made the move from
+SQLite to Postgres a two-file change. Every read awaits `connection()` first so
+it cannot resolve during prerendering and bake build-time rows into static HTML.
 
 **The logo lives in `public/` as six PNGs.** The supplied artwork is a stacked
 lockup on a cream card, which suits neither a 64px header nor a dark
@@ -116,7 +118,22 @@ has no accounts — every order stands alone. See `prisma/schema.prisma`.
 ## Notes
 
 - There is no authentication, so `/orders` lists every order in the database.
-- Restaurant images are hosted on Unsplash; `next.config.ts` allows that one
-  remote host for image optimisation.
+- All 155 photos are self-hosted under `public/`, so `next.config.ts` allows no
+  remote image hosts at all. Dish photos come from Pexels and restaurant covers
+  from TheMealDB; both are credited at `/credits`, which the Pexels API
+  guidelines require.
 - Light and dark themes are driven by `prefers-color-scheme` from tokens
   defined once in `src/app/globals.css`.
+
+## Deployment
+
+Runs on Vercel. Two things are load-bearing:
+
+- **Postgres, not SQLite.** Serverless filesystems are read-only and thrown
+  away between invocations, so a local database file cannot be written to or
+  survive a request. `DATABASE_URL` must be set in the Vercel project.
+- **`postinstall` runs `prisma generate`.** The generated client lives in
+  `src/generated/prisma`, which is gitignored, so the build regenerates it.
+
+After changing the schema, run `npx prisma migrate deploy` against the
+production database before the new code goes live.
