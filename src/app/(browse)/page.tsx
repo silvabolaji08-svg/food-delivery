@@ -61,8 +61,12 @@ export default async function HomePage({ searchParams }: PageProps<"/">) {
               {cuisine ? ` serving ${cuisine}` : ""}
             </p>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {restaurants.map((restaurant) => (
-                <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+              {restaurants.map((restaurant, index) => (
+                <RestaurantCard
+                  key={restaurant.id}
+                  restaurant={restaurant}
+                  index={index}
+                />
               ))}
             </div>
           </>

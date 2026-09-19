@@ -160,3 +160,129 @@ body {
 .brand-mark:hover .brand-mark-art {
   transform: translateX(2px);
 }
+
+/*
+ * Shared motion vocabulary.
+ *
+ * Every animation below starts hidden and ends in the resting state with
+ * `forwards`, which is what lets the reduced-motion rule above collapse it to
+ * an instant reveal instead of leaving an invisible element behind. Anything
+ * added here must follow the same rule.
+ */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The only non-entrance animation: it fires when the cart count changes, so
+   it starts and ends at rest and needs no `forwards`. */
+@keyframes badge-bump {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-rise-in {
+  opacity: 0;
+  animation: rise-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fade-in 220ms ease-out forwards;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-pop-in {
+  opacity: 0;
+  animation: pop-in 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-badge-bump {
+  animation: badge-bump 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Exit counterparts, used only by the cart drawer's staged close. */
+@keyframes slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 200ms ease-in forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 200ms ease-in forwards;
+}
+
+/*
+ * The one deliberately looping animation: it marks the step an order is
+ * sitting on right now, so it has to keep going rather than play once. It
+ * pulses a shadow instead of the element itself, which avoids nudging the
+ * timeline's layout on every cycle.
+ */
+@keyframes status-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand) 45%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in oklab, var(--brand) 0%, transparent);
+  }
+}
+
+.animate-status-pulse {
+  animation: status-pulse 2s ease-out infinite;
+}

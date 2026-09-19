@@ -47,7 +47,7 @@ export function OrderTimeline({ status }: { status: OrderStatus }) {
                   isDone || isCurrent
                     ? "border-brand bg-brand text-brand-foreground"
                     : "border-border bg-surface text-muted"
-                }`}
+                } ${isCurrent ? "animate-status-pulse" : ""}`}
               >
                 {isDone ? (
                   <Check className="h-4 w-4" aria-hidden />

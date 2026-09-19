@@ -24,10 +24,13 @@ export function MenuItemRow({
   item,
   restaurant,
   canOrder,
+  index = 0,
 }: {
   item: MenuItemView;
   restaurant: CartRestaurant;
   canOrder: boolean;
+  /** Position within its section, used to stagger the entrance. */
+  index?: number;
 }) {
   const addItem = useCart((state) => state.addItem);
   const openDrawer = useCartDrawer((state) => state.open);
@@ -85,7 +88,10 @@ export function MenuItemRow({
   );
 
   return (
-    <li className="flex items-start justify-between gap-4 py-4">
+    <li
+      style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}
+      className="animate-rise-in group/row flex items-start justify-between gap-4 py-4"
+    >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="font-medium leading-tight">{item.name}</h4>
@@ -130,16 +136,20 @@ export function MenuItemRow({
         // menus do it. Dishes without one keep the plain text layout instead of
         // reserving an empty grey square.
         <div className="relative shrink-0">
-          <Image
-            src={item.imageUrl}
-            alt=""
-            width={240}
-            height={240}
-            sizes="(min-width: 640px) 128px, 96px"
-            className={`h-24 w-24 rounded-xl object-cover sm:h-32 sm:w-32 ${
-              item.isAvailable ? "" : "grayscale"
-            }`}
-          />
+          {/* The clip lives on an inner wrapper so the zoom stays inside the
+              rounded photo without also cropping the button that overhangs it. */}
+          <div className="overflow-hidden rounded-xl">
+            <Image
+              src={item.imageUrl}
+              alt=""
+              width={240}
+              height={240}
+              sizes="(min-width: 640px) 128px, 96px"
+              className={`h-24 w-24 object-cover transition-transform duration-300 group-hover/row:scale-[1.04] sm:h-32 sm:w-32 ${
+                item.isAvailable ? "" : "grayscale"
+              }`}
+            />
+          </div>
           <div className="absolute -bottom-2 -right-2">{addButton}</div>
         </div>
       ) : (

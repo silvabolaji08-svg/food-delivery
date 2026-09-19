@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 
 import { cartItemCount, cartTotals, useCart } from "@/lib/cart-store";
@@ -10,7 +10,7 @@ import { useCartDrawer } from "@/lib/ui-store";
 import { useHydrated } from "@/lib/use-hydrated";
 
 export function CartDrawer() {
-  const { isOpen, close } = useCartDrawer();
+  const { isOpen, close: closeNow } = useCartDrawer();
   const restaurant = useCart((state) => state.restaurant);
   const lines = useCart((state) => state.lines);
   const setQuantity = useCart((state) => state.setQuantity);
@@ -20,6 +20,21 @@ export function CartDrawer() {
   const resolveConflict = useCart((state) => state.resolveConflict);
 
   const hydrated = useHydrated();
+
+  // The panel has to outlive `isOpen` long enough to animate out, so closing
+  // is staged: mark it closing and let the animation's end event unmount it.
+  // Tying it to `animationend` rather than a timer keeps the two from drifting
+  // apart, and still fires when reduced motion collapses the duration.
+  const [closing, setClosing] = useState(false);
+
+  /** Starts the exit animation; `onAnimationEnd` finishes the job. */
+  const close = useCallback(() => setClosing(true), []);
+
+  function handleExitEnd() {
+    if (!closing) return;
+    setClosing(false);
+    closeNow();
+  }
 
   // Close on Escape, and lock background scrolling while the panel is open.
   useEffect(() => {
@@ -60,14 +75,19 @@ export function CartDrawer() {
         type="button"
         aria-label="Close cart"
         onClick={close}
-        className="absolute inset-0 bg-black/40"
+        className={`absolute inset-0 bg-black/40 ${
+          closing ? "animate-fade-out" : "animate-fade-in"
+        }`}
       />
 
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Your cart"
-        className="relative flex h-full w-full max-w-md flex-col border-l border-border bg-surface shadow-xl"
+        onAnimationEnd={handleExitEnd}
+        className={`relative flex h-full w-full max-w-md flex-col border-l border-border bg-surface shadow-xl ${
+          closing ? "animate-slide-out-right" : "animate-slide-in-right"
+        }`}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
@@ -235,13 +255,13 @@ export function CartDrawer() {
         {/* A cart can only hold one kitchen at a time, so an add from another
             restaurant waits here for the customer to decide. */}
         {conflict && (
-          <div className="absolute inset-0 z-10 flex items-end bg-black/40 sm:items-center sm:justify-center sm:p-5">
+          <div className="animate-fade-in absolute inset-0 z-10 flex items-end bg-black/40 sm:items-center sm:justify-center sm:p-5">
             <div
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="cart-conflict-title"
               aria-describedby="cart-conflict-body"
-              className="w-full rounded-t-2xl border-t border-border bg-surface p-5 shadow-xl sm:rounded-2xl sm:border"
+              className="animate-pop-in w-full rounded-t-2xl border-t border-border bg-surface p-5 shadow-xl sm:rounded-2xl sm:border"
             >
               <span className="grid h-11 w-11 place-items-center rounded-xl bg-brand-subtle text-brand">
                 <AlertTriangle className="h-5 w-5" aria-hidden />

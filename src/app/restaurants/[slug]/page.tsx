@@ -199,12 +199,13 @@ export default async function RestaurantPage({
                   </h3>
 
                   <ul className="mt-2 divide-y divide-border">
-                    {section.items.map((item) => (
+                    {section.items.map((item, index) => (
                       <MenuItemRow
                         key={item.id}
                         item={item}
                         restaurant={cartRestaurant}
                         canOrder={restaurant.isOpen}
+                        index={index}
                       />
                     ))}
                   </ul>

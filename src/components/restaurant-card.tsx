@@ -7,13 +7,18 @@ import type { RestaurantListItem } from "@/lib/queries";
 
 export function RestaurantCard({
   restaurant,
+  index = 0,
 }: {
   restaurant: RestaurantListItem;
+  /** Position in the grid, used to stagger the entrance. */
+  index?: number;
 }) {
   return (
     <Link
       href={`/restaurants/${restaurant.slug}`}
-      className="group overflow-hidden rounded-2xl border border-border bg-surface transition-shadow hover:shadow-lg"
+      // Capped so a long list does not leave the last cards waiting seconds.
+      style={{ animationDelay: `${Math.min(index, 11) * 55}ms` }}
+      className="animate-rise-in group overflow-hidden rounded-2xl border border-border bg-surface transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:shadow-xl"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-muted">
         {restaurant.imageUrl ? (

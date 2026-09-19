@@ -31,7 +31,7 @@ export function CartBar({ restaurantId }: { restaurantId: string }) {
       <button
         type="button"
         onClick={open}
-        className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl bg-brand px-5 py-3.5 font-semibold text-brand-foreground shadow-lg transition-colors hover:bg-brand-hover"
+        className="animate-rise-in pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl bg-brand px-5 py-3.5 font-semibold text-brand-foreground shadow-lg transition-colors hover:bg-brand-hover hover:-translate-y-0.5 hover:shadow-xl"
       >
         <span className="relative">
           <ShoppingBag className="h-5 w-5" aria-hidden />
