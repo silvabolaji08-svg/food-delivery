@@ -5,11 +5,12 @@ import { ChevronRight, Receipt } from "lucide-react";
 import { OrderLookup } from "@/components/order-lookup";
 import { formatMoney } from "@/lib/money";
 import { listRecentOrders } from "@/lib/queries";
+import { readSessionId } from "@/lib/session";
 import { STATUS_BADGES, isTerminal, toOrderStatus } from "@/lib/order-status";
 
 export const metadata: Metadata = {
   title: "Orders",
-  description: "Every order placed in this demo, newest first.",
+  description: "Orders placed from this browser, newest first.",
 };
 
 const dateFormat = new Intl.DateTimeFormat("en-US", {
@@ -20,13 +21,15 @@ const dateFormat = new Intl.DateTimeFormat("en-US", {
 });
 
 export default async function OrdersPage() {
-  const orders = await listRecentOrders();
+  const sessionId = await readSessionId();
+  const orders = await listRecentOrders(sessionId);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
       <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Orders</h1>
       <p className="mt-2 text-muted">
-        This demo has no sign-in, so every order placed here is listed below.
+        Orders placed from this browser. There is no sign-in, so switching
+        device or clearing cookies means looking an order up by its number.
       </p>
 
       <div className="mt-6">
@@ -38,9 +41,10 @@ export default async function OrdersPage() {
           <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-surface-muted text-muted">
             <Receipt className="h-6 w-6" aria-hidden />
           </span>
-          <p className="mt-4 font-medium">No orders yet</p>
+          <p className="mt-4 font-medium">No orders from this browser yet</p>
           <p className="mt-1 text-sm text-muted">
-            Once you place an order it will show up here so you can track it.
+            Place an order and it will appear here. Already have an order
+            number? Track it with the box above.
           </p>
           <Link
             href="/"

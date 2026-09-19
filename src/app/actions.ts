@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { calculateTotals, formatMoney } from "@/lib/money";
 import { getMenuItemsByIds, getRestaurantById } from "@/lib/queries";
+import { ensureSessionId } from "@/lib/session";
 import {
   ORDER_FLOW,
   isCancellable,
@@ -206,10 +207,15 @@ export async function placeOrder(
     };
   }
 
+  // Server Actions are the only place a cookie can be set, so the session is
+  // minted here rather than on first page view.
+  const sessionId = await ensureSessionId();
+
   await prisma.order.create({
     data: {
       orderNumber,
       status: "PLACED",
+      sessionId,
       customerName,
       customerPhone,
       customerEmail: customerEmail || null,

@@ -155,10 +155,19 @@ export async function getOrderByNumber(orderNumber: string) {
   });
 }
 
-export async function listRecentOrders(limit = 20) {
+/**
+ * Only the orders placed from this browser. Without a session there is
+ * nothing to show — deliberately, since listing every customer's name, phone
+ * number and address to any visitor is not something an empty cookie should
+ * unlock.
+ */
+export async function listRecentOrders(sessionId: string | null, limit = 20) {
+  if (!sessionId) return [];
+
   await connection();
 
   return prisma.order.findMany({
+    where: { sessionId },
     orderBy: { placedAt: "desc" },
     take: limit,
     include: {

@@ -103,12 +103,18 @@ model Order {
   placedAt    DateTime @default(now())
   estimatedAt DateTime
 
+  // Which browser placed this. Null for orders created before sessions
+  // existed. Anyone with the order number can still track an order; this only
+  // controls what /orders lists without one.
+  sessionId String?
+
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 
   items OrderItem[]
 
   @@index([restaurantId])
+  @@index([sessionId])
 }
 
 model OrderItem {
