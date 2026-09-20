@@ -39,17 +39,19 @@ export async function listRestaurants(filters: RestaurantFilters = {}) {
 
   const { search, cuisine, sort = "recommended" } = filters;
 
-  // SQLite's LIKE is case-insensitive for ASCII, which is what Prisma's
-  // `contains` compiles to here. `mode: "insensitive"` is not supported.
+  // `mode: "insensitive"` is load-bearing on Postgres, whose LIKE is
+  // case-sensitive. SQLite's was not, so the search worked without it until
+  // the database moved and then silently matched nothing for "pizza".
+  const insensitive = { mode: "insensitive" } as const;
   const where = {
     AND: [
       cuisine ? { cuisine } : {},
       search
         ? {
             OR: [
-              { name: { contains: search } },
-              { description: { contains: search } },
-              { cuisine: { contains: search } },
+              { name: { contains: search, ...insensitive } },
+              { description: { contains: search, ...insensitive } },
+              { cuisine: { contains: search, ...insensitive } },
             ],
           }
         : {},

@@ -26,6 +26,7 @@ Open <http://localhost:3000>.
 | `npm run build`    | Production build (runs TypeScript)             |
 | `npm run start`    | Serve the production build                     |
 | `npm run lint`     | ESLint                                         |
+| `npm test`         | Playwright end-to-end suite (builds first)     |
 | `npm run seed`     | Reset and reseed restaurant data               |
 | `npm run db:reset` | Drop, re-migrate and reseed the database       |
 | `npm run db:studio`| Prisma Studio                                  |
@@ -109,6 +110,28 @@ a courier app; both are Server Actions that revalidate the route.
   the initial form state live in `src/lib/checkout.ts`; declaring them in
   `actions.ts` compiles, but they arrive on the client as `undefined`.
 
+## Tests
+
+`npm test` runs the Playwright suite in `e2e/` against a production build,
+because several things it guards only behave correctly when built: static vs
+dynamic rendering, the 404 status from `notFound()`, and serverless file
+tracing. It needs a seeded `DATABASE_URL`; CI runs it against a throwaway
+Postgres service container.
+
+The suite exists because each of these was a real bug, not a hypothetical:
+
+| Spec | Guards |
+| --- | --- |
+| `browse` | cuisine filters, case-insensitive search, real 404 statuses |
+| `ordering` | cart conflicts, server-side validation, tracking, cancelling |
+| `security` | server re-pricing, minimum order, cross-restaurant carts |
+| `privacy` | orders scoped to the browser that placed them |
+| `responsive` | no horizontal overflow at 390px |
+| `motion` | reduced motion leaves content visible, not stuck hidden |
+
+Tests share one database and place real orders, so they run serially
+(`workers: 1`).
+
 ## Data model
 
 `Restaurant → MenuSection → MenuItem`, and `Order → OrderItem`. Orders keep the
@@ -117,7 +140,9 @@ has no accounts — every order stands alone. See `prisma/schema.prisma`.
 
 ## Notes
 
-- There is no authentication, so `/orders` lists every order in the database.
+- There is no authentication. `/orders` is scoped to the browser that placed
+  the order via an httpOnly cookie; an order number still works from anywhere,
+  which is how someone tracks a delivery from another device.
 - All 155 photos are self-hosted under `public/`, so `next.config.ts` allows no
   remote image hosts at all. Dish photos come from Pexels and restaurant covers
   from TheMealDB; both are credited at `/credits`, which the Pexels API
@@ -134,6 +159,9 @@ Runs on Vercel. Two things are load-bearing:
   survive a request. `DATABASE_URL` must be set in the Vercel project.
 - **`postinstall` runs `prisma generate`.** The generated client lives in
   `src/generated/prisma`, which is gitignored, so the build regenerates it.
+- **Postgres LIKE is case-sensitive**, unlike SQLite's. Searches use
+  `mode: "insensitive"`; without it the restaurant search matches nothing for
+  a lowercase query.
 
 After changing the schema, run `npx prisma migrate deploy` against the
 production database before the new code goes live.

@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A superseded run on the same branch has nothing useful left to say.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      # The end-to-end suite places real orders, so it needs a real database.
+      # A throwaway Postgres keeps CI off the production one.
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: bitebox
+          POSTGRES_PASSWORD: bitebox
+          POSTGRES_DB: bitebox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://bitebox:bitebox@localhost:5432/bitebox_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # `postinstall` runs `prisma generate`, so the client is built here.
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed
+        run: npm run seed
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts builds the app itself via its webServer command,
+      # so this also covers `next build` and the TypeScript check.
+      - name: End-to-end tests
+        run: npm test
+
+      - name: Upload report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

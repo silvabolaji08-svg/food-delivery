@@ -48,3 +48,9 @@ next-env.d.ts
 
 # cached TheMealDB index used by scripts/fetch-hero-images.py
 prisma/.mealdb-cache.json
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
