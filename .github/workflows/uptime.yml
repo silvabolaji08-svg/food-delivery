@@ -1,0 +1,119 @@
+name: Uptime
+
+on:
+  schedule:
+    # Every 15 minutes. GitHub queues cron generously, so treat this as
+    # "roughly every 15 minutes" rather than a guarantee.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+# Never let two checks overlap; a queued one has nothing new to say.
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No install step: the checker uses only built-in Node APIs, so this
+      # keeps a check that runs ~96 times a day down to a few seconds.
+      - name: Check every site
+        id: health
+        run: |
+          set +e
+          node scripts/health-check.mjs > result.txt 2>&1
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          cat result.txt
+          {
+            echo 'report<<HEALTH_EOF'
+            cat result.txt
+            echo HEALTH_EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the outage issue
+        if: steps.health.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const report = process.env.REPORT;
+            const title = "Site down";
+
+            // One rolling issue per outage. Without this, a site that stays
+            // down overnight would file ~96 identical issues by morning.
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "uptime",
+            });
+
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              "```",
+              report.trim(),
+              "```",
+              "",
+              `Checked at ${new Date().toISOString()} — [run log](${run})`,
+            ].join("\n");
+
+            if (open.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: open[0].number,
+                body: `Still down.\n\n${body}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                labels: ["uptime"],
+                body: `A scheduled check could not reach one or more sites.\n\n${body}`,
+              });
+            }
+        env:
+          REPORT: ${{ steps.health.outputs.report }}
+
+      - name: Close the outage issue once everything recovers
+        if: steps.health.outputs.exit_code == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "uptime",
+            });
+
+            for (const issue of open) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `Recovered — all sites healthy as of ${new Date().toISOString()}.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: "closed",
+              });
+            }
+
+      - name: Fail the run so it shows red
+        if: steps.health.outputs.exit_code != '0'
+        run: exit 1

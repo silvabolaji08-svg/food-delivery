@@ -12,7 +12,8 @@
     "db:studio": "prisma studio",
     "postinstall": "prisma generate",
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "health": "node scripts/health-check.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

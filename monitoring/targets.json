@@ -1,0 +1,89 @@
+{
+  "$comment": [
+    "Every site this monitor watches, with what a healthy response looks like",
+    "for each. Health is defined per site rather than globally because these",
+    "differ wildly: the APIs answer 404 at / and that is correct, whisper",
+    "redirects to /login, and BiteBox once served a 200 while its database was",
+    "down. A single 'is it 200?' rule would be wrong for most of these.",
+    "",
+    "expectStatus - any of these codes counts as up.",
+    "expectText   - this must appear in the body. This is the part that catches",
+    "               a page that loads but is broken; without it, an error page",
+    "               returned with a 200 looks perfectly healthy.",
+    "rejectText   - if this appears, the site is down even on a 200.",
+    "followRedirects - for sites whose root legitimately redirects."
+  ],
+  "targets": [
+    {
+      "name": "bitebox",
+      "url": "https://bitebox-ten.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "Good food, brought to your door",
+      "rejectText": "Something went wrong",
+      "note": "Food delivery app. expectText is rendered from Postgres, so this also proves the database is reachable."
+    },
+    {
+      "name": "arclane",
+      "url": "https://arclane-nu.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "Arclane",
+      "note": "Flight booking."
+    },
+    {
+      "name": "whisper",
+      "url": "https://whisper-blond-xi.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "Whisper",
+      "followRedirects": true,
+      "note": "Root 307s to /login, which is correct behaviour, so redirects are followed."
+    },
+    {
+      "name": "voltix",
+      "url": "https://voltix-tech-store.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "Voltix",
+      "note": "Tech store."
+    },
+    {
+      "name": "casanova",
+      "url": "https://casanova-steel-gamma.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "Casanova",
+      "note": "Property listings."
+    },
+    {
+      "name": "portfolio",
+      "url": "https://portfolio-flax-xi-16.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "portfolio",
+      "note": "Personal site."
+    },
+    {
+      "name": "nft-marketplace",
+      "url": "https://nft-marketplace-khaki-zeta.vercel.app/",
+      "expectStatus": [200],
+      "expectText": "nft-marketplace"
+    },
+    {
+      "name": "voltix-api",
+      "url": "https://voltix-api-wine.vercel.app/",
+      "expectStatus": [404],
+      "expectText": "Route not found",
+      "note": "An API with no root route. The 404 IS the healthy answer - it proves the app is running and routing. A plain status check would report this down forever."
+    },
+    {
+      "name": "casanova-api",
+      "url": "https://casanova-fnzw.vercel.app/",
+      "expectStatus": [404],
+      "expectText": "Route not found",
+      "note": "Same as voltix-api."
+    },
+    {
+      "name": "portfolio-backend",
+      "url": "https://portfolio-backend-ochre-gamma.vercel.app/",
+      "expectStatus": [404],
+      "expectText": "Cannot GET /",
+      "note": "Express default for an unmatched route, which means Express is alive."
+    }
+  ]
+}

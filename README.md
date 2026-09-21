@@ -27,6 +27,7 @@ Open <http://localhost:3000>.
 | `npm run start`    | Serve the production build                     |
 | `npm run lint`     | ESLint                                         |
 | `npm test`         | Playwright end-to-end suite (builds first)     |
+| `npm run health`   | Check every deployed site is up                |
 | `npm run seed`     | Reset and reseed restaurant data               |
 | `npm run db:reset` | Drop, re-migrate and reseed the database       |
 | `npm run db:studio`| Prisma Studio                                  |
@@ -131,6 +132,29 @@ The suite exists because each of these was a real bug, not a hypothetical:
 
 Tests share one database and place real orders, so they run serially
 (`workers: 1`).
+
+## Uptime monitoring
+
+`npm run health` checks every site in `monitoring/targets.json`.
+`.github/workflows/uptime.yml` runs it every 15 minutes, opens a single
+rolling GitHub issue when something breaks, and closes it on recovery.
+
+Two things it does that a plain status check would not:
+
+- **It asserts on page content, not just the status code.** BiteBox served
+  HTTP 200 for hours while its database was deleted, because Next starts
+  streaming the shell before the error surfaces. `expectText` is a string the
+  page can only render if its data layer is alive.
+- **Health is defined per site.** The three API projects answer `404` at `/`
+  and that is correct — it proves the app is routing. Whisper redirects to
+  `/login`. Treating `200` as the only healthy answer would report half of
+  these down permanently.
+
+Cold starts are the main source of false alarms, so each target gets three
+attempts with a widening gap before it counts as down.
+
+Adding a site means adding an entry to `monitoring/targets.json` — no code
+change, and nothing to deploy into the site being watched.
 
 ## Data model
 
