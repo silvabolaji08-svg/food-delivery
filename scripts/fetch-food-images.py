@@ -220,6 +220,15 @@ def main():
     for i, (rel, query, is_hero) in enumerate(jobs, 1):
         dest = os.path.join(PUBLIC, rel.replace("/", os.sep))
 
+        # Some dishes have too few stock photos for keyword search to find the
+        # right one -- it returned tortilla chips for churros and a pizza for
+        # quesabirria. Those are pinned to a Wikimedia Commons photo filed
+        # under the dish's own name, so FORCE must not clobber them.
+        if credits.get(rel, {}).get("source") == "wikimedia":
+            manifest[rel] = "/" + rel
+            skipped += 1
+            continue
+
         if os.path.exists(dest) and not FORCE:
             manifest[rel] = "/" + rel
             skipped += 1

@@ -168,9 +168,18 @@ has no accounts — every order stands alone. See `prisma/schema.prisma`.
   the order via an httpOnly cookie; an order number still works from anywhere,
   which is how someone tracks a delivery from another device.
 - All 155 photos are self-hosted under `public/`, so `next.config.ts` allows no
-  remote image hosts at all. Dish photos come from Pexels and restaurant covers
-  from TheMealDB; both are credited at `/credits`, which the Pexels API
-  guidelines require.
+  remote image hosts at all. Most dish photos come from Pexels and restaurant
+  covers from TheMealDB; everything is credited at `/credits`, which the Pexels
+  API guidelines require.
+- **22 dishes are pinned to Wikimedia Commons.** Keyword search on a stock
+  library fails on dishes it holds few photos of, and it returned tortilla
+  chips for churros, a pizza for quesabirria and a berry crepe for masala dosa.
+  Commons files a photo under the name of the dish itself, so the lead image of
+  the article *is* the dish. These are CC-licensed rather than Pexels-licensed,
+  so `/credits` names each photo's licence next to its author.
+  `scripts/fetch-food-images.py` skips any image whose credit records
+  `"source": "wikimedia"`, so re-running it — even with `FORCE` — cannot
+  overwrite them.
 - Light and dark themes are driven by `prefers-color-scheme` from tokens
   defined once in `src/app/globals.css`.
 

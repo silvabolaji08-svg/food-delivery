@@ -17,27 +17,63 @@ type Credit = {
   query: string;
   photographer: string;
   photographerUrl: string;
-  pexelsUrl: string;
   alt: string;
+  source?: "pexels" | "wikimedia";
+  sourceUrl?: string;
+  pexelsUrl?: string;
+  license?: string;
+  licenseUrl?: string;
 };
 
 /**
- * The Pexels API guidelines require a prominent link back to Pexels and
- * credit to the photographer, so the fetcher records both at download time
- * and this page is where they are shown.
+ * Pexels asks for a link back plus the photographer's name. The Wikimedia
+ * photos are mostly CC BY-SA, which additionally requires naming the licence
+ * and linking to it, so every image row carries its own licence rather than
+ * relying on one blanket statement at the top.
  */
 const credits: [string, Credit][] = Object.entries(
   creditsData as Record<string, Credit>,
 ).sort(([a], [b]) => a.localeCompare(b));
 
-export default function CreditsPage() {
+const linkFor = (credit: Credit) =>
+  credit.sourceUrl ?? credit.pexelsUrl ?? "https://www.pexels.com";
 
-  const photographers = new Map<string, string>();
+function contributors(source: Credit["source"]) {
+  const people = new Map<string, string>();
   for (const [, credit] of credits) {
-    if (credit.photographer) {
-      photographers.set(credit.photographer, credit.photographerUrl);
+    const from = credit.source ?? "pexels";
+    if (from === source && credit.photographer) {
+      people.set(credit.photographer, credit.photographerUrl);
     }
   }
+  return people;
+}
+
+export default function CreditsPage() {
+  const pexels = contributors("pexels");
+  const commons = contributors("wikimedia");
+  const commonsCount = credits.filter(
+    ([, c]) => c.source === "wikimedia",
+  ).length;
+  const pexelsCount = credits.length - commonsCount;
+
+  const nameList = (people: Map<string, string>) => (
+    <ul className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm">
+      {[...people].map(([name, url], index) => (
+        <li key={name}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2 hover:text-brand"
+          >
+            {name}
+          </a>
+          {index < people.size - 1 && <span className="text-muted">,</span>}
+        </li>
+      ))}
+    </ul>
+  );
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
@@ -56,7 +92,7 @@ export default function CreditsPage() {
       <section className="mt-8 rounded-2xl border border-border bg-surface p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Dish photography</h2>
         <p className="mt-1 text-sm text-muted">
-          Provided by{" "}
+          Most dishes are photographed by contributors to{" "}
           <a
             href="https://www.pexels.com"
             target="_blank"
@@ -68,37 +104,49 @@ export default function CreditsPage() {
           .
         </p>
 
-        {photographers.size === 0 ? (
+        {pexels.size === 0 ? (
           <p className="mt-4 text-sm text-muted">
             No Pexels photography has been fetched yet.
           </p>
         ) : (
           <>
             <p className="mt-4 text-sm text-muted">
-              {photographers.size}{" "}
-              {photographers.size === 1 ? "photographer" : "photographers"}{" "}
-              across {credits.length} images:
+              {pexels.size}{" "}
+              {pexels.size === 1 ? "photographer" : "photographers"} across{" "}
+              {pexelsCount} images:
             </p>
-            <ul className="mt-3 flex flex-wrap gap-x-2 gap-y-1 text-sm">
-              {[...photographers].map(([name, url], index) => (
-                <li key={name}>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline underline-offset-2 hover:text-brand"
-                  >
-                    {name}
-                  </a>
-                  {index < photographers.size - 1 && (
-                    <span className="text-muted">,</span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            {nameList(pexels)}
           </>
         )}
       </section>
+
+      {commonsCount > 0 && (
+        <section className="mt-4 rounded-2xl border border-border bg-surface p-5 sm:p-6">
+          <h2 className="text-lg font-semibold">
+            Regional dishes, from Wikimedia Commons
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Stock search struggles with dishes it has few photos of, and
+            returned tortilla chips for churros and a pizza for quesabirria. For{" "}
+            {commonsCount} of them the photo comes instead from{" "}
+            <a
+              href="https://commons.wikimedia.org"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-brand underline underline-offset-2"
+            >
+              Wikimedia Commons
+            </a>
+            , where a photo is filed under the name of the dish itself. These
+            are used under the Creative Commons licences named below.
+          </p>
+          <p className="mt-4 text-sm text-muted">
+            {commons.size} {commons.size === 1 ? "contributor" : "contributors"}
+            :
+          </p>
+          {nameList(commons)}
+        </section>
+      )}
 
       <section className="mt-4 rounded-2xl border border-border bg-surface p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Restaurant photography</h2>
@@ -123,15 +171,25 @@ export default function CreditsPage() {
             {credits.map(([path, credit]) => (
               <li key={path} className="flex flex-wrap gap-x-2 py-2">
                 <span className="font-mono text-xs text-muted">{path}</span>
-                <span className="ml-auto">
+                <span className="ml-auto flex gap-x-2">
                   <a
-                    href={credit.pexelsUrl}
+                    href={linkFor(credit)}
                     target="_blank"
                     rel="noreferrer"
                     className="underline underline-offset-2 hover:text-brand"
                   >
                     {credit.photographer || "Pexels"}
                   </a>
+                  {credit.license && (
+                    <a
+                      href={credit.licenseUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 text-xs text-muted underline underline-offset-2 hover:text-brand"
+                    >
+                      {credit.license}
+                    </a>
+                  )}
                 </span>
               </li>
             ))}
